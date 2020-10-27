@@ -155,19 +155,19 @@ class Module(object):
       operations = self.write_imports(f)
       operations.append('a')
       operations = "%s" % "+".join(operations)
-      f.write("export function f_%s() { \n" % self.name)
+      f.write("export function f_%s() {\n" % self.name)
       if self.size:
-        f.write(' let a=1;\n')
-        f.write(' if (document.evaluate_all) {\n')
-        f.write('   a=helper()\n')
-        f.write(' }\n')
+        f.write('  let a=1;\n')
+        f.write('  if (document.evaluate_all) {\n')
+        f.write('    a=helper()\n')
+        f.write('  }\n')
       else:
-        f.write(' let a=1;')
-      f.write(" return %s;\n" % operations)
-      f.write("}\n")
+        f.write('  let a=1;')
+      f.write('  return %s;\n' % operations)
+      f.write('}\n')
       if self.size:
         f.write('function helper() {\n')
-        f.write('    let a=1;')
+        f.write('  let a=1;')
         for i in range(math.floor((self.size - len(operations)*2)/ 10)):
           f.write('a=a+1-a-1;')
         f.write(';\n');
@@ -184,7 +184,7 @@ class Module(object):
     for module in self.children:
       f.write("import {f_%s} from './%s/%s.mjs'\n" % (
         module.name, self.simple_name, module.name))
-      operations.append("f_%s()" % module.name)
+      operations.append('f_%s()' % module.name)
     return operations
 
 #=============================================================================
