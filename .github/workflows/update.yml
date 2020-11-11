@@ -18,7 +18,7 @@ jobs:
       image: docker://ruby:2.7-alpine
     steps:
       - name: Install Dependencies
-        run: python3.7
+        run: apk add python3 
 
       - name: Checkout main Branch 
         uses: actions/checkout@v2
