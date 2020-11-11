@@ -31,7 +31,7 @@ jobs:
       - name: Export Module Tree
         run: |
             mkdir _site/modules
-            cp js marker _site/modules
+            cp -r js marker _site/modules
             python3 ./gen.py --depth=5 --rules="A:ABCD" --sizes="A:1k,B:1k,C:1k,D:1k"
             mv out _site/modules/small-left
             python3 ./gen.py --depth=5 --rules="A:BCDA" --sizes="A:1k,B:1k,C:1k,D:1k"
