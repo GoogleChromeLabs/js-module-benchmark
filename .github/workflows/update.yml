@@ -17,11 +17,8 @@ jobs:
     steps:
       - name: Checkout main Branch 
         uses: actions/checkout@v2
-
-      - name: setup ruby
-        uses: ruby/setup-ruby@v1
         with:
-          ruby-version: 2.6
+          persist-credentials: false
 
       - name: Export Module Tree
         run: |
@@ -38,4 +35,5 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BRANCH: gh-pages
           FOLDER: .
+          CLEAN: true
           SINGLE_COMMIT: true
