@@ -14,25 +14,19 @@ jobs:
   build:
     name: Build and Deploy 
     runs-on: ubuntu-latest
-    container:
-      image: docker://ruby:2.7-alpine
     steps:
-      - name: Install Dependencies
-        run: apk add python3 
-
       - name: Checkout main Branch 
         uses: actions/checkout@v2
 
+      - name: setup ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 2.6
+
       - name: Build Jekyll Side
         uses: limjh16/jekyll-action-ts@v2
-        env:
-          JEKYLL_PAT: ${{ secrets.JEKYLL_PAT }}
-
-      - name: Checkout gh-pages
-        uses: actions/checkout@v2
         with:
-          ref: gh-pages
-          path: gh-pages
+          enable_cache: true
 
       - name: Export Module Tree
         run: |
