@@ -15,10 +15,10 @@ jobs:
     name: Build and Deploy 
     runs-on: ubuntu-latest
     container:
-      image: docker://python:3.7-alpine
+      image: docker://ruby:2.7-alpine
     steps:
       - name: Install Dependencies
-        run: apk add git openssh-client rsync tar zstd npm ruby
+        run: python3.7
 
       - name: Checkout main Branch 
         uses: actions/checkout@v2
