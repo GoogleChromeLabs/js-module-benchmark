@@ -17,6 +17,11 @@ jobs:
     container:
       image: docker://python:3.7-alpine
     steps:
+      - name: 💎 setup ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 2.7
+
       - name: Install Dependencies
         run: apk add git openssh-client rsync tar zstd npm
 
@@ -31,11 +36,11 @@ jobs:
           restore-keys: gems-
 
       - name: Build Jekyll Side
-        uses:  helaili/jekyll-action@2.0.4
+        uses: limjh16/jekyll-action-ts@v2
         env:
           JEKYLL_PAT: ${{ secrets.JEKYLL_PAT }}
         with:
-          target_branch: 'gh-pages'
+          enable_cache: true
 
       - name: Checkout gh-pages
         uses: actions/checkout@v2
@@ -45,17 +50,12 @@ jobs:
 
       - name: Export Module Tree
         run: |
-            rm -rf gh-pages/modules
-            mkdir gh-pages/modules
+            mkdir _site/modules
             python3 ./gen.py --depth=3 --rules="A:AB" --sizes="A:12k,B:1m,C:1k"
-            mv gen gh-pages/modules/simple
+            mv gen _site/modules/simple
 
       - name: Deploy
-        uses: JamesIves/github-pages-deploy-action@releases/v3
+        uses: peaceiris/actions-gh-pages@v3
         with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BASE_BRANCH: main
-          BRANCH: gh-pages
-          FOLDER: gh-pages
-          GIT_CONFIG_NAME: V8 Tools Updater
-          GIT_CONFIG_EMAIL: camillobr@chromium.org
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./_site
