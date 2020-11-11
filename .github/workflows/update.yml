@@ -23,19 +23,10 @@ jobs:
       - name: Checkout main Branch 
         uses: actions/checkout@v2
 
-      - name: Cache/Restore gem files
-        uses: actions/cache@v1
-        with:
-          path: vendor/bundle
-          key: gems-${{ hashFiles('**/Gemfile.lock') }}
-          restore-keys: gems-
-
       - name: Build Jekyll Side
         uses: limjh16/jekyll-action-ts@v2
         env:
           JEKYLL_PAT: ${{ secrets.JEKYLL_PAT }}
-        with:
-          enable_cache: true
 
       - name: Checkout gh-pages
         uses: actions/checkout@v2
