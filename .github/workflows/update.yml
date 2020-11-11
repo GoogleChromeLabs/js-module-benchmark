@@ -34,7 +34,7 @@ jobs:
             mv out light-mixed
       - name: Export Module Tree
         run: |
-            python3 ./gen.py --depth=70 --rules="A:BAC" --sizes="A:12k,B:1m,C:1k"
+            python3 ./gen.py --depth=70 --rules="A:BAC" --sizes="A:100k,B:1m,C:300k"
             mv out heavy-middle
 
       - name: Deploy
