@@ -22,11 +22,11 @@ jobs:
 
       - name: Export Module Tree
         run: |
-            python3 ./gen.py --depth=5 --rules="A:ABCD" --sizes="A:1k,B:1k,C:1k,D:1k"
+            python3 ./gen.py --depth=7 --rules="A:ABCD" --sizes="A:1k,B:1k,C:1k,D:1k"
             mv out small-left
-            python3 ./gen.py --depth=5 --rules="A:BCDA" --sizes="A:1k,B:1k,C:1k,D:1k"
+            python3 ./gen.py --depth=7 --rules="A:BCDA" --sizes="A:1k,B:1k,C:1k,D:1k"
             mv out small-right
-            python3 ./gen.py --depth=3 --rules="A:BAC" --sizes="A:12k,B:1m,C:1k"
+            python3 ./gen.py --depth=4 --rules="A:BAC" --sizes="A:12k,B:1m,C:1k"
             mv out large
 
       - name: Deploy
