@@ -1,0 +1,59 @@
+# Copyright 2020 the V8 project authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+name: Deploy Modules Benchmark
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build and Deploy V8 Tools
+    runs-on: ubuntu-latest
+    container:
+      image: docker://python:3.7-alpine
+    steps:
+      - name: Install Dependencies
+        run: apk add git openssh-client rsync tar zstd npm
+
+      - name: Checkout main Branch 
+        uses: actions/checkout@v2
+
+      - name: Cache/Restore gem files
+        uses: actions/cache@v1
+        with:
+          path: vendor/bundle
+          key: gems-${{ hashFiles('**/Gemfile.lock') }}
+          restore-keys: gems-
+
+      - name: Build Jekyll Side
+        uses:  helaili/jekyll-action@2.0.4
+        env:
+          JEKYLL_PAT: ${{ secrets.JEKYLL_PAT }}
+
+      - name: Checkout gh-pages
+        uses: actions/checkout@v2
+        with:
+          ref: gh-pages
+          path: gh-pages
+
+      - name: Export Module Tree
+        run: |
+            rm -rf gh-pages/modules
+            mkdir gh-pages/modules
+            python3 ./gen.py --depth=3 --rules="A:AB" --sizes="A:12k,B:1m,C:1k"
+            mv gen gh-pages/modules/simple
+
+      - name: Deploy
+        uses: JamesIves/github-pages-deploy-action@releases/v3
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BASE_BRANCH: main
+          BRANCH: gh-pages
+          FOLDER: gh-pages
+          GIT_CONFIG_NAME: V8 Tools Updater
+          GIT_CONFIG_EMAIL: camillobr@chromium.org
