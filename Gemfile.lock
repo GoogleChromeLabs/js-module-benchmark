@@ -3,7 +3,6 @@ GEM
   specs:
     addressable (2.7.0)
       public_suffix (>= 2.0.2, < 5.0)
-    coderay (1.1.3)
     colorator (1.1.0)
     concurrent-ruby (1.1.7)
     em-websocket (0.5.2)
@@ -30,6 +29,11 @@ GEM
       safe_yaml (~> 1.0)
     jekyll-sass-converter (1.5.2)
       sass (~> 3.4)
+    jekyll-seo-tag (2.7.1)
+      jekyll (>= 3.8, < 5.0)
+    jekyll-theme-minimal (0.1.1)
+      jekyll (~> 3.5)
+      jekyll-seo-tag (~> 2.0)
     jekyll-watch (2.2.1)
       listen (~> 3.0)
     kramdown (1.17.0)
@@ -56,8 +60,8 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  coderay (~> 1.1.0)
   jekyll (~> 3.8.5)
+  jekyll-theme-minimal
 
 BUNDLED WITH
    2.1.4
