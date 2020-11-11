@@ -20,10 +20,7 @@ jobs:
       - name: 💎 setup ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: 2.7
-
-      - name: Install Dependencies
-        run: apk add git openssh-client rsync tar zstd npm
+          ruby-version: 2.6
 
       - name: Checkout main Branch 
         uses: actions/checkout@v2
