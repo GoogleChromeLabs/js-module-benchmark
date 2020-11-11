@@ -12,6 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {f_A} from '../out/A.mjs'
+function runModuleCode() {
+  document.evaluate_all = false
+  for (let i=1; i<=5; i++) {
+    const label = `${i}: evaluate f_A()`;
+    console.time(label)
+    console.info('f_A() result=', document.f_A());
+    console.timeEnd(label);
+  }
 
-document.f_A = f_A
+  document.evaluate_all = true
+  for (let i=1; i<=5; i++) {
+    const label = `Iteration ${i}: evaluate all f_A()`;
+    console.time(label);
+    console.info('f_A() result=', document.f_A());
+    console.timeEnd(label);
+  }
+}
+

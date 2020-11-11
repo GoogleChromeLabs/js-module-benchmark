@@ -225,37 +225,38 @@ class App(object):
     self.modules.sort(key=lambda x: (len(x.path.parts), x.path.parts))
 
     print("Creating apps:")
+    self.export_app(path, name="index")
     for count in (0, 10, 100, 500, len(self.modules)):
-      self.export_app(path,
-                      prefetch_count=count,
-                      name="prefetch-wait",
-                      wait=2500)
-      self.export_app(path, prefetch_count=count, name="prefetch", wait=0)
+      self.export_app(path, 'prefetch', prefetch_count=count)
 
-  def export_app(self, path, name, prefetch_count, wait):
-    file_name = ('app-%s-%s.html' % (name, prefetch_count))
-    print("  %s" % file_name)
+  def export_app(self, path, name, prefetch_count=0, wait=0):
+    if name == 'index':
+        file_name = 'index.html'
+    else:
+        file_name = f'app-{name}-{prefetch_count}.html'
+    print(f"  {file_name}")
     with open(path / file_name, 'w') as f:
       f.write("""<html>
   <meta charset="utf-8">
 <head>
   <title>Module Test</title>
-  <link rel="preload" as="script" href="../js/loadModules.js">
+  <link rel="preload" as="script" href="../js/helper.js">
 """)
       for module in self.modules[:prefetch_count]:
         f.write(f'  <link rel="modulepreload" href="{module.path}">\n')
       f.write("""</head>
 <body>
+  <script src="../js/helper.js"></script>
   <script src="../js/marker/start.js"></script>
-  <script src="../js/loadModules.js"></script>
   <script>
-    console.log(new Date().toISOString(), "main-script");
-    """)
-      if wait > 0:
-        f.write(f"setTimeout(loadModules, {wait});")
-      else:
-        f.write("loadModules();")
-      f.write("""
+    console.time('loadModules');
+  </script>
+  <script type="module">
+    import {f_A} from './A.mjs'
+    console.timeEnd('loadModules');
+    console.log(new Date().toISOString(), "Loaded: A.mjs");
+    document.f_A = f_A;
+    runModuleCode();
   </script>
   <script src='../js/marker/end.js'></script>
 </body>
