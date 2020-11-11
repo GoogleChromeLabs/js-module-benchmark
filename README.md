@@ -40,7 +40,7 @@ Additionally you can specify the size of each generated module with `--sizes`:
 ```
 ## Examples
 
-* [~250 small modules](./right-left): `--depth=70 --rules="A:ABCD" --sizes="A:1k,B:1k,C:1k,D:1k"`
+* [~250 small modules](./light-left): `--depth=70 --rules="A:ABCD" --sizes="A:1k,B:1k,C:1k,D:1k"`
 * [~250 small modules](./light-right): `--depth=70 --rules="A:BCDA" --sizes="A:1k,B:1k,C:1k,D:1k"`
 * [~1200 very small modules](./light-mixed): `--depth=8 --rules="A:ABCDA"`
 * [~210 large modules](./heavy-middle): `--depth=70 --rules="A:BAC" --sizes="A:100k,B:1m,C:300k"`
