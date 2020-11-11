@@ -19,6 +19,7 @@ from optparse import OptionParser
 from pathlib import Path
 import os
 import math
+import random
 
 #=============================================================================
 
@@ -178,8 +179,11 @@ class Module(object):
       if self.size:
         f.write("function helper() {\n")
         f.write("  let a=1;")
-        for i in range(math.floor((self.size - len(operations) * 2) / 10)):
-          f.write("a=a+1-a-1;")
+        # Use random numbers to lower compression quality.
+        instruction_length = (3+4+1)+(3+4+2)
+        for i in range(math.floor((self.size - len(operations) * 2) / instruction_length)):
+          number = random.randint(1000, 9999)
+          f.write(f"a+={number};a-={number};\n")
         f.write(";\n")
         f.write("  return a+100;\n")
         f.write("}\n")
