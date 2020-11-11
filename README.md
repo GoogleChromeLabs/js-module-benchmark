@@ -38,3 +38,9 @@ Additionally you can specify the size of each generated module with `--sizes`:
 ```
 ./get.py --depth=2 --rules="A:AB" --sizes="A:12k,B:1m,C:1k"
 ```
+## Examples
+
+* [~250 small modules](./right-left): `--depth=70 --rules="A:ABCD" --sizes="A:1k,B:1k,C:1k,D:1k"`
+* [~250 small modules](./light-right): `--depth=70 --rules="A:BCDA" --sizes="A:1k,B:1k,C:1k,D:1k"`
+* [~1200 small modules](./light-mixed): `--depth=8 --rules="A:ABCDA" --sizes="A:1k,B:1k,C:1k,D:1k"`
+* [~210 small modules](./heavy-middle): `--depth=70 --rules="A:BAC" --sizes="A:12k,B:1m,C:1k"`
