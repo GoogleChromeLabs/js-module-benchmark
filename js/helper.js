@@ -13,20 +13,38 @@
 // limitations under the License.
 
 function runModuleCode() {
+  const kCount = 5;
   document.evaluate_all = false
-  for (let i=1; i<=5; i++) {
-    const label = `${i}: evaluate f_A()`;
-    console.time(label)
-    console.info('f_A() result=', document.f_A());
-    console.timeEnd(label);
+  for (let i=1; i<=kCount; i++) {
+    const label = `Iteration ${i}: evaluate f_A()`;
+    timeStart(label)
+    log('f_A() result=', document.f_A());
+    timeEnd(label);
   }
 
   document.evaluate_all = true
-  for (let i=1; i<=5; i++) {
+  for (let i=1; i<=kCount; i++) {
     const label = `Iteration ${i}: evaluate all f_A()`;
-    console.time(label);
-    console.info('f_A() result=', document.f_A());
-    console.timeEnd(label);
+    timeStart(label);
+    log('f_A() result=', document.f_A());
+    timeEnd(label);
   }
 }
 
+function log(...msg) {
+  console.log(...msg);
+  document.getElementById('log').innerText += `${msg.join(' ')}\n`;
+}
+
+function timeStart(label) {
+  console.time(label);
+  performance.mark(`${label}-start`);
+}
+
+function timeEnd(label) {
+  performance.mark(`${label}-end`);
+  console.timeEnd(label);
+  performance.measure(label, `${label}-start`, `${label}-end`);
+  const time = performance.getEntriesByName(label)[0].duration;
+  document.getElementById('log').innerText += `${label}: ${time.toFixed(2)}ms\n`;
+}

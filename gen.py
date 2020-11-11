@@ -239,22 +239,39 @@ class App(object):
       f.write("""<html>
   <meta charset="utf-8">
 <head>
-  <title>Module Test</title>
+  <title>MODULE BENCHMARK</title>
   <link rel="preload" as="script" href="../js/helper.js">
 """)
       for module in self.modules[:prefetch_count]:
         f.write(f'  <link rel="modulepreload" href="{module.path}">\n')
-      f.write("""</head>
+      f.write(f"""</head>
 <body>
+  <h1>Info</h1>
+  <dl>
+    <dt>Expansion Rules:</dt>
+    <dd>{self.options.rules}</dd>
+    <dt>Module Sizes:</dt>
+    <dd>{self.options.sizes}</dd>
+    <dt>Depth:</dt>
+    <dd>{self.options.depth}</dd>
+    <dt>Module Count:</dt>
+    <dd>{len(self.modules)}</dd>
+    <dt>Total Source Size:</dt>
+    <dd>{round(sum(map(lambda m: m.size, self.modules))/1024/1024, 2)} MiB</dd>
+  </dl>
+
+  <h1>Results</h1>
+  <pre id="log"></pre>
+
   <script src="../js/helper.js"></script>
   <script src="../js/marker/start.js"></script>
   <script>
-    console.time('loadModules');
+    timeStart('loadModules');
   </script>
   <script type="module">
-    import {f_A} from './A.mjs'
-    console.timeEnd('loadModules');
-    console.log(new Date().toISOString(), "Loaded: A.mjs");
+    import {{f_A}} from './A.mjs'
+    timeEnd('loadModules');
+    log(new Date().toISOString(), "Loaded: A.mjs");
     document.f_A = f_A;
     runModuleCode();
   </script>
