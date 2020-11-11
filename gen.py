@@ -179,10 +179,17 @@ class Module(object):
       if self.size:
         f.write("function helper() {\n")
         f.write("  let a=1;")
-        # Use random numbers to lower compression quality.
-        instruction_length = (3+4+1)+(3+4+2)
+        # Use random numbers to increase entropy and lower compression quality.
+        # The number of random digits dials in the average compression rate:
+        # - 10 digits => ~3x
+        # -  3 digits => ~5x
+        # -  2 digits => ~7x
+        random_digits = 10;
+        instruction_length = (3+random_digits+1)+(3+random_digits+2)
+        min_range = 10**(random_digits-1);
+        max_range = 10**random_digits-1
         for i in range(math.floor((self.size - len(operations) * 2) / instruction_length)):
-          number = random.randint(1000, 9999)
+          number = random.randint(min_range, max_range)
           f.write(f"a+={number};a-={number};\n")
         f.write(";\n")
         f.write("  return a+100;\n")
