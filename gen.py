@@ -227,7 +227,7 @@ class Benchmark(object):
     with open(template_path, 'r') as template_file:
       return Template(template_file.read())
 
-  @functools.cached_property
+  @functools.lru_cache
   def benchmark_template(self):
     return self.template('benchmark')
 
@@ -264,7 +264,7 @@ class Benchmark(object):
     print(f"  {file_name}")
     path = out_path / file_name
     with open(path, 'w') as f:
-      f.write(self.benchmark_template.substitute(
+      f.write(self.benchmark_template().substitute(
           dict(headers=self.output_headers(prefetch_count),
                info=self.output_info(),
                scripts=self.output_scripts(preload_count))))
