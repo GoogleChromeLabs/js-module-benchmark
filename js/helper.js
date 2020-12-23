@@ -12,6 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+function hasURLParam(key) {
+  const queryString = window.location.search;
+  const urlParams = new URLSearchParams(queryString);
+  return urlParams.has(key)
+}
+
 function runModuleCode() {
   const kCount = 5;
   document.evaluate_all = false

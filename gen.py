@@ -20,6 +20,8 @@ from pathlib import Path
 import os
 import math
 import random
+from string import Template
+import functools
 
 #=============================================================================
 
@@ -123,7 +125,7 @@ class Module(object):
     self.parent = parent
     self.depth = depth
     self.index = index
-    self.size = size
+    self.size = int(size)
     if parent:
       # Create unique name based on full path
       path = self.parent.submodule_path / name
@@ -153,7 +155,7 @@ class Module(object):
                       parent=self,
                       depth=self.depth + 1,
                       index=index,
-                      size=options.sizes.get(symbol))
+                      size=options.sizes.get(symbol, 0))
       index += 1
       self.append(module)
       accumulator.append(module)
@@ -184,11 +186,13 @@ class Module(object):
         # - 10 digits => ~3x
         # -  3 digits => ~5x
         # -  2 digits => ~7x
-        random_digits = 10;
-        instruction_length = (3+random_digits+1)+(3+random_digits+2)
-        min_range = 10**(random_digits-1);
-        max_range = 10**random_digits-1
-        for i in range(math.floor((self.size - len(operations) * 2) / instruction_length)):
+        random_digits = 10
+        instruction_length = (3 + random_digits + 1) + (3 + random_digits + 2)
+        min_range = 10**(random_digits - 1)
+        max_range = 10**random_digits - 1
+        for i in range(
+            math.floor(
+                (self.size - len(operations) * 2) / instruction_length)):
           number = random.randint(min_range, max_range)
           f.write(f"a+={number};a-={number};\n")
         f.write(";\n")
@@ -213,10 +217,19 @@ class Module(object):
 #=============================================================================
 
 
-class App(object):
+class Benchmark(object):
   def __init__(self, options):
     self.options = options
     self.create_module_tree()
+
+  def template(self, name):
+    template_path = Path(__file__).parent / 'html' / f"{name}.template.html"
+    with open(template_path, 'r') as template_file:
+      return Template(template_file.read())
+
+  @functools.cached_property
+  def benchmark_template(self):
+    return self.template('benchmark')
 
   def create_module_tree(self):
     self.options.module_tree = []
@@ -225,39 +238,46 @@ class App(object):
                                                     self.options,
                                                     accumulator=[])
 
-  def export(self, path):
-    path.mkdir(parents=True, exist_ok=True)
+  def export(self, out_path):
+    out_path.mkdir(parents=True, exist_ok=True)
 
     print("Creating modules:")
-    self.start_module.export(path)
+    self.start_module.export(out_path)
     print(f"Created {len(self.modules )} modules")
 
     # Topologically sort paths
-    self.modules.sort(key=lambda x: (len(x.path.parts), x.path.parts))
+    self.modules.sort(key=lambda m: (len(m.path.parts), m.path.parts))
 
     print("Creating apps:")
-    self.export_app(path, name="index")
-    for count in (0, 10, 100, 500, len(self.modules)):
-      self.export_app(path, 'prefetch', prefetch_count=count)
+    benchmarks = []
+    for count in (0, 10, 50, 100, 250, 500, len(self.modules)):
+      benchmarks.append(
+        self.export_benchmark(out_path, 'prefetch', prefetch_count=count))
+    for count in (0, 10, 50, 100, 250, 500, len(self.modules)):
+      benchmarks.append(
+        self.export_benchmark(out_path, 'preload', preload_count=count))
+    self.export_index(out_path, benchmarks)
 
-  def export_app(self, path, name, prefetch_count=0, wait=0):
-    if name == 'index':
-        file_name = 'index.html'
-    else:
-        file_name = f'app-{name}-{prefetch_count}.html'
+
+  def export_benchmark(self, out_path, name, prefetch_count=0, preload_count=0, wait=0):
+    file_name = f'{name}-{prefetch_count+preload_count}.html'
     print(f"  {file_name}")
-    with open(path / file_name, 'w') as f:
-      f.write("""<html>
-  <meta charset="utf-8">
-<head>
-  <title>MODULE BENCHMARK</title>
-  <link rel="preload" as="script" href="../js/helper.js">
-""")
-      for module in self.modules[:prefetch_count]:
-        f.write(f'  <link rel="modulepreload" href="{module.path}">\n')
-      f.write(f"""</head>
-<body>
-  <h1>Info</h1>
+    path = out_path / file_name
+    with open(path, 'w') as f:
+      f.write(self.benchmark_template.substitute(
+          dict(headers=self.output_headers(prefetch_count),
+               info=self.output_info(),
+               scripts=self.output_scripts(preload_count))))
+    return path
+
+  def output_headers(self, prefetch_count):
+    return "\n".join([
+        f'  <link rel="modulepreload" href="{module.path}">'
+        for module in self.modules[:prefetch_count]
+    ])
+
+  def output_info(self):
+    return f"""
   <dl>
     <dt>Expansion Rules:</dt>
     <dd>{self.options.rules}</dd>
@@ -269,30 +289,30 @@ class App(object):
     <dd>{len(self.modules)}</dd>
     <dt>Total Source Size:</dt>
     <dd>{round(sum(map(lambda m: m.size, self.modules))/1024/1024, 2)} MiB</dd>
-  </dl>
+  </dl>"""
 
-  <h1>Results</h1>
-  <pre id="log"></pre>
+  def output_scripts(self, preload_count):
+    return "\n".join([
+        f'  <script type="module" src="{module.path}"></script>'
+        for module in self.modules[:preload_count]
+    ])
 
-  <script src="../js/helper.js"></script>
-  <script src="../js/marker/start.js"></script>
-  <script>
-    timeStart('loadModules');
-  </script>
-  <script type="module">
-    import {{f_A}} from './A.mjs'
-    timeEnd('loadModules');
-    log(new Date().toISOString(), "Loaded: A.mjs");
-    document.f_A = f_A;
-    runModuleCode();
-  </script>
-  <script src='../js/marker/end.js'></script>
-</body>
-</html>""")
+  def export_index(self, out_path, benchmarks):
+    with open(out_path / 'index.html', 'w') as f:
+      f.write(self.template('index').substitute(
+          dict(
+               info=self.output_info(),
+               benchmarks=self.output_benchmark_list(out_path, benchmarks))))
+
+  def output_benchmark_list(self, out_path, benchmarks):
+    return "\n".join([
+        f'  <li><a href="{path.relative_to(out_path)}">{path.name}</a></li>'
+        for path in benchmarks
+    ])
 
 
 #=============================================================================
 if __name__ == "__main__":
   options = Options().options
-  app = App(options)
-  app.export(Path('out'))
+  benchmark = Benchmark(options)
+  benchmark.export(Path('out'))

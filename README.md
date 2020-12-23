@@ -8,13 +8,13 @@ trick.
 ## Basic Usage
 1. Generate the modules: `rm -rf out/ && python3 ./gen.py`
 2. Start webserver: `ws`
-3. Benchmark app:
+3. Run the benchmark:
   ```
-  testing/xvfb.py out/release/chrome http://localhost:8000/out/app-prefetch-0.html
+  testing/xvfb.py out/release/chrome http://localhost:8000/out/prefetch-0.html
   ```
 
 The `out/` directory contains various version of the main app with different
-degrees of module prefetching.
+degrees of module [prefetching](https://developer.mozilla.org/en-US/docs/Web/HTML/Link_types/modulepreload) and top-level includes.
 
 ## Extended Usage
 `gen.py` can be used with simple expansion rules to generate arbitrary trees.
