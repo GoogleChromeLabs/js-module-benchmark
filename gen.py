@@ -222,12 +222,12 @@ class Benchmark(object):
     self.options = options
     self.create_module_tree()
 
+  @functools.lru_cache(maxsize=10)
   def template(self, name):
     template_path = Path(__file__).parent / 'html' / f"{name}.template.html"
     with open(template_path, 'r') as template_file:
       return Template(template_file.read())
 
-  @functools.lru_cache
   def benchmark_template(self):
     return self.template('benchmark')
 
