@@ -255,8 +255,10 @@ def step(comment):
   def step_decorator(func):
     @functools.wraps(func)
     def step_wrapper(*args, **kwargs):
-      print(comment)
-      return func(*args, **kwargs)
+      print(f'::group::{comment}')
+      result = func(*args, **kwargs)
+      print('::endgroup::')
+      return result
 
     return step_wrapper
 
