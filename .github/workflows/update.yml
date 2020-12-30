@@ -51,9 +51,9 @@ jobs:
      
       - name: Export Module Tree
         run: |
-            python3 ./gen.py --depth=60 --rules="A:BAC" --sizes="A:100k,B:1m,C:300k"
+            python3 ./gen.py --depth=20 --rules="A:BAC" --sizes="A:100k,B:1m,C:300k"
             mv out heavy-middle
-            python3 ./gen.py --depth=60 --rules="A:BAC" --sizes="A:100k,B:1m,C:300k" --dynamic-imports
+            python3 ./gen.py --depth=20 --rules="A:BAC" --sizes="A:100k,B:1m,C:300k" --dynamic-imports
             mv out heavy-middle-dynamic
 
       - name: Deploy
