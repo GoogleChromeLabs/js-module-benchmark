@@ -20,11 +20,7 @@ $info
   </script>
   $scripts
   <script type="module">
-    import {f_A} from './A.mjs'
-    timeEnd('loadModules');
-    log(new Date().toISOString(), "Loaded: A.mjs");
-    document.f_A = f_A;
-    runModuleCode();
+    runModuleBenchmark(import('./A.mjs'));
   </script>
   <script src='../js/marker/end.js'></script>
 </body>
