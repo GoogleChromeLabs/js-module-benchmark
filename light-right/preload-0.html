@@ -1,0 +1,39 @@
+<html>
+  <meta charset="utf-8">
+<head>
+  <title>MODULE BENCHMARK</title>
+  <link rel="preload" as="script" href="../js/helper.js">
+
+</head>
+<body>
+  <h1>Module Loading Benchmark</h1>
+  <h2>Info</h2>
+
+  <dl>
+    <dt>Expansion Rules:</dt>
+    <dd>{'A': 'BCDA'}</dd>
+    <dt>Module Sizes:</dt>
+    <dd>{'A': 1024, 'B': 1024, 'C': 1024, 'D': 1024}</dd>
+    <dt>Depth:</dt>
+    <dd>70</dd>
+    <dt>Module Count:</dt>
+    <dd>280</dd>
+    <dt>Total Source Size:</dt>
+    <dd>0.27 MiB</dd>
+  </dl>
+
+  <h2>Results</h2>
+  <pre id="log"></pre>
+
+  <script src="../js/helper.js"></script>
+  <script src="../js/marker/start.js"></script>
+  <script>
+    timeStart("loadModules");
+  </script>
+  
+  <script type="module">
+    runModuleBenchmark(import("./A.mjs"));
+  </script>
+  <script src="../js/marker/end.js"></script>
+</body>
+</html>
