@@ -1,0 +1,7 @@
+{
+  "name": "module-benchmark",
+  "version": "1.0.0",
+  "dependencies": {
+    "rollup": "^2.35.1"
+  }
+}
