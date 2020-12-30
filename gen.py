@@ -17,7 +17,7 @@
 
 from optparse import OptionParser
 from pathlib import Path
-import os
+import subprocess
 import math
 import random
 from string import Template
@@ -306,7 +306,9 @@ class Benchmark(object):
       return
     module_path = out_path / "A.mjs"
     bundle_path = out_path / 'bundled.mjs'
-    os.system(f"npx rollup '{ module_path}' --format=esm --file='{bundle_path}' --name=A")
+    subprocess.check_call(
+      f"npx rollup '{ module_path}' --format=esm --file='{bundle_path}' --name=A",
+      shell=True)
     # TODO: support webbundle
 
   @step("Exporting html")
