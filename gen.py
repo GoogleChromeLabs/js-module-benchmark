@@ -250,6 +250,14 @@ class Module(object):
 
 #=============================================================================
 
+def step(comment):
+  def step_decorator(func):
+    @functools.wraps(func)
+    def step_wrapper(*args, **kwargs):
+      print(comment)
+      return func(*args, **kwargs)
+    return step_wrapper
+  return step_decorator 
 
 class Benchmark(object):
   def __init__(self, options):
@@ -265,8 +273,8 @@ class Benchmark(object):
   def benchmark_template(self):
     return self.template('benchmark')
 
+  @step("Creating module tree")
   def create_module_tree(self):
-    print("Creating module tree")
     self.options.module_tree = []
     self.start_module = Module(ROOT_AXIOM,
                                parent=None,
@@ -277,17 +285,32 @@ class Benchmark(object):
                                                     self.options,
                                                     accumulator=[])
 
+  @step("Exporting benchmark")
   def export(self, out_path):
     out_path.mkdir(parents=True, exist_ok=True)
+    self.export_modules(out_path)
+    self.build_bundles(out_path)
+    self.export_html(out_path)
 
-    print("Writing modules:")
+  @step("Exporting modules")
+  def export_modules(self, out_path):
     self.start_module.export(out_path)
     print(f" Created {len(self.modules )} modules")
 
     # Topologically sort paths
     self.modules.sort(key=lambda m: (len(m.path.parts), m.path.parts))
 
-    print("Creating apps:")
+  @step("Building bundles")
+  def build_bundles(self, out_path):
+    if self.options.dynamic_imports:
+      return
+    module_path = out_path / "A.mjs"
+    bundle_path = out_path / 'bundled.mjs'
+    os.system(f"npx rollup '{ module_path}' --format=esm --file='{bundle_path}' --name=A")
+    # TODO: support webbundle
+
+  @step("Exporting html")
+  def export_html(self, out_path):
     benchmarks = []
     for count in (0, 10, 50, 100, 250, 500, len(self.modules)):
       benchmarks.append(
@@ -295,7 +318,21 @@ class Benchmark(object):
     for count in (0, 10, 50, 100, 250, 500, len(self.modules)):
       benchmarks.append(
           self.export_benchmark(out_path, 'preload', preload_count=count))
+    if not self.options.dynamic_imports:
+      benchmarks.append(self.export_bundled(out_path))
     self.export_index(out_path, benchmarks)
+
+  @step("Exporting bundled")
+  def export_bundled(self, out_path):
+    file_name = f'bundled.html' 
+    path = out_path / file_name
+    with open(path, 'w') as f:
+      f.write(self.benchmark_template().substitute(
+          dict(headers="",
+               info=self.output_info(),
+               scripts="",
+               module='./bundled.mjs')))
+    return path 
 
   def export_benchmark(self,
                        out_path,
@@ -310,7 +347,8 @@ class Benchmark(object):
       f.write(self.benchmark_template().substitute(
           dict(headers=self.output_headers(prefetch_count),
                info=self.output_info(),
-               scripts=self.output_scripts(preload_count))))
+               scripts=self.output_scripts(preload_count),
+               module='./A.mjs')))
     return path
 
   def output_headers(self, prefetch_count):
