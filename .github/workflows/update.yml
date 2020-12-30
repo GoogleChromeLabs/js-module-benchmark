@@ -20,22 +20,41 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Install node 
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+      
+      - name: 'Install node packages'
+        run: npm install
+
       - name: Export Module Tree
         run: |
             python3 ./gen.py --depth=70 --rules="A:ABCD" --sizes="A:1k,B:1k,C:1k,D:1k"
             mv out light-left
+            python3 ./gen.py --depth=70 --rules="A:ABCD" --sizes="A:1k,B:1k,C:1k,D:1k" --dynamic-imports
+            mv out light-left-dynamic
+      
       - name: Export Module Tree
         run: |
             python3 ./gen.py --depth=70 --rules="A:BCDA" --sizes="A:1k,B:1k,C:1k,D:1k"
             mv out light-right
+            python3 ./gen.py --depth=70 --rules="A:BCDA" --sizes="A:1k,B:1k,C:1k,D:1k" --dynamic-imports
+            mv out light-right-dynamic
+     
       - name: Export Module Tree
         run: |
             python3 ./gen.py --depth=8 --rules="A:ABCDA" --sizes="A:1k,B:1k,C:1k,D:1k"
             mv out light-mixed
+            python3 ./gen.py --depth=8 --rules="A:ABCDA" --sizes="A:1k,B:1k,C:1k,D:1k" --dynamic-imports
+            mv out light-mixed-dynamic
+     
       - name: Export Module Tree
         run: |
-            python3 ./gen.py --depth=70 --rules="A:BAC" --sizes="A:100k,B:1m,C:300k"
+            python3 ./gen.py --depth=20 --rules="A:BAC" --sizes="A:100k,B:1m,C:300k"
             mv out heavy-middle
+            python3 ./gen.py --depth=20 --rules="A:BAC" --sizes="A:100k,B:1m,C:300k" --dynamic-imports
+            mv out heavy-middle-dynamic
 
       - name: Deploy
         uses: JamesIves/github-pages-deploy-action@3.7.1

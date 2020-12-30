@@ -17,7 +17,7 @@
 
 from optparse import OptionParser
 from pathlib import Path
-import os
+import subprocess
 import math
 import random
 from string import Template
@@ -63,6 +63,10 @@ class Options(object):
         help="Specify a size for each module, for instance 'A:10K,B:1.4M'"
         "This is the generated module payload and does not include "
         "module setup and import code for now.")
+    self.parser.add_option("--dynamic-imports",
+                           default=False,
+                           action="store_true",
+                           help="Use dynamic imports everywhere.")
 
   def parse_options(self):
     (self.options, args) = self.parser.parse_args()
@@ -113,19 +117,27 @@ class Options(object):
       if symbol in sizes:
         self.parser.error(f"Duplicate size for {symbol}")
       sizes[symbol] = size
+    print("SIZES: ", self.options.sizes)
 
 
 #=============================================================================
 
 
 class Module(object):
-  def __init__(self, name, parent, depth, index=0, size=0):
+  def __init__(self,
+               name,
+               parent,
+               depth,
+               index=0,
+               size=0,
+               dynamic_import=False):
     self.children = []
     self.simple_name = name
     self.parent = parent
     self.depth = depth
     self.index = index
     self.size = int(size)
+    self.dynamic_import = dynamic_import
     if parent:
       # Create unique name based on full path
       path = self.parent.submodule_path / name
@@ -155,7 +167,8 @@ class Module(object):
                       parent=self,
                       depth=self.depth + 1,
                       index=index,
-                      size=options.sizes.get(symbol, 0))
+                      size=options.sizes.get(symbol, 0),
+                      dynamic_import=options.dynamic_imports)
       index += 1
       self.append(module)
       accumulator.append(module)
@@ -166,17 +179,26 @@ class Module(object):
     with (out_dir / self.path).open('w') as f:
       operations = []
       operations = self.write_imports(f)
-      operations.append('a')
-      operations = "+".join(operations)
-      f.write(f"export function f_{self.name}() {{\n")
+      if self.dynamic_import:
+        f.write(f"export async function f_{self.name}() {{\n")
+      else:
+        f.write(f"export function f_{self.name}() {{\n")
+      f.write("  let a=1;\n")
       if self.size:
-        f.write("  let a=1;\n")
         f.write("  if (document.evaluate_all) {\n")
         f.write("    a=helper()\n")
         f.write("  }\n")
+      if self.dynamic_import:
+        f.write(f"  const results = await Promise.all([\n")
+        operations = ",\n    ".join(operations)
+        f.write(f"    {operations}\n")
+        f.write("  ]);\n")
+        f.write("  for (let result of results) a += result;\n")
+        f.write("  return a;\n")
       else:
-        f.write("  let a=1;")
-      f.write(f"  return {operations};\n")
+        operations.append('a')
+        operations = "+".join(operations)
+        f.write(f"  return {operations};\n")
       f.write("}\n")
       if self.size:
         f.write("function helper() {\n")
@@ -205,6 +227,18 @@ class Module(object):
         module.export(out_dir)
 
   def write_imports(self, f):
+    if self.dynamic_import:
+      return self.create_dynamic_imports()
+    else:
+      return self.write_static_imports(f)
+
+  def create_dynamic_imports(self):
+    return [
+        f"import('./{self.simple_name}/{module.name}.mjs').then(m => m.f_{module.name}())"
+        for module in self.children
+    ]
+
+  def write_static_imports(self, f):
     operations = []
     for module in self.children:
       f.write(
@@ -215,6 +249,20 @@ class Module(object):
 
 
 #=============================================================================
+
+
+def step(comment):
+  def step_decorator(func):
+    @functools.wraps(func)
+    def step_wrapper(*args, **kwargs):
+      print(f'::group::{comment}')
+      result = func(*args, **kwargs)
+      print('::endgroup::')
+      return result
+
+    return step_wrapper
+
+  return step_decorator
 
 
 class Benchmark(object):
@@ -231,35 +279,73 @@ class Benchmark(object):
   def benchmark_template(self):
     return self.template('benchmark')
 
+  @step("Creating module tree")
   def create_module_tree(self):
     self.options.module_tree = []
-    self.start_module = Module(ROOT_AXIOM, parent=None, depth=0, size=0)
+    self.start_module = Module(ROOT_AXIOM,
+                               parent=None,
+                               depth=0,
+                               size=0,
+                               dynamic_import=self.options.dynamic_imports)
     self.modules = self.start_module.expand_recurse(ROOT_AXIOM,
                                                     self.options,
                                                     accumulator=[])
 
+  @step("Exporting benchmark")
   def export(self, out_path):
     out_path.mkdir(parents=True, exist_ok=True)
+    self.export_modules(out_path)
+    if not self.options.dynamic_imports:
+      self.build_bundles(out_path)
+    self.export_html(out_path)
 
-    print("Creating modules:")
+  @step("Exporting modules")
+  def export_modules(self, out_path):
     self.start_module.export(out_path)
-    print(f"Created {len(self.modules )} modules")
+    print(f" Created {len(self.modules )} modules")
 
     # Topologically sort paths
     self.modules.sort(key=lambda m: (len(m.path.parts), m.path.parts))
 
-    print("Creating apps:")
+  @step("Building bundles")
+  def build_bundles(self, out_path):
+    module_path = out_path / "A.mjs"
+    bundle_path = out_path / 'bundled.mjs'
+    subprocess.check_call(
+        f"npx rollup '{ module_path}' --format=esm --file='{bundle_path}' --name=A",
+        shell=True)
+    # TODO: support webbundle
+
+  @step("Exporting html")
+  def export_html(self, out_path):
     benchmarks = []
     for count in (0, 10, 50, 100, 250, 500, len(self.modules)):
       benchmarks.append(
-        self.export_benchmark(out_path, 'prefetch', prefetch_count=count))
+          self.export_benchmark(out_path, 'prefetch', prefetch_count=count))
     for count in (0, 10, 50, 100, 250, 500, len(self.modules)):
       benchmarks.append(
-        self.export_benchmark(out_path, 'preload', preload_count=count))
+          self.export_benchmark(out_path, 'preload', preload_count=count))
+    if not self.options.dynamic_imports:
+      benchmarks.append(self.export_bundled(out_path))
     self.export_index(out_path, benchmarks)
 
+  @step("Exporting bundled")
+  def export_bundled(self, out_path):
+    path = out_path / 'bundled.html'
+    with open(path, 'w') as f:
+      f.write(self.benchmark_template().substitute(
+          dict(headers="",
+               info=self.output_info(),
+               scripts="",
+               module='./bundled.mjs')))
+    return path
 
-  def export_benchmark(self, out_path, name, prefetch_count=0, preload_count=0, wait=0):
+  def export_benchmark(self,
+                       out_path,
+                       name,
+                       prefetch_count=0,
+                       preload_count=0,
+                       wait=0):
     file_name = f'{name}-{prefetch_count+preload_count}.html'
     print(f"  {file_name}")
     path = out_path / file_name
@@ -267,7 +353,8 @@ class Benchmark(object):
       f.write(self.benchmark_template().substitute(
           dict(headers=self.output_headers(prefetch_count),
                info=self.output_info(),
-               scripts=self.output_scripts(preload_count))))
+               scripts=self.output_scripts(preload_count),
+               module='./A.mjs')))
     return path
 
   def output_headers(self, prefetch_count):
@@ -299,10 +386,11 @@ class Benchmark(object):
 
   def export_index(self, out_path, benchmarks):
     with open(out_path / 'index.html', 'w') as f:
-      f.write(self.template('index').substitute(
-          dict(
-               info=self.output_info(),
-               benchmarks=self.output_benchmark_list(out_path, benchmarks))))
+      f.write(
+          self.template('index').substitute(
+              dict(info=self.output_info(),
+                   benchmarks=self.output_benchmark_list(out_path,
+                                                         benchmarks))))
 
   def output_benchmark_list(self, out_path, benchmarks):
     return "\n".join([

@@ -18,21 +18,27 @@ function hasURLParam(key) {
   return urlParams.has(key)
 }
 
-function runModuleCode() {
+async function runModuleBenchmark(module_promise) {
+  const module = await module_promise;
+  timeEnd('loadModules');
+  log(new Date().toISOString(), "Loaded: A.mjs");
+
   const kCount = 5;
+  log("\nEvaluating imports only:".toUpperCase())
   document.evaluate_all = false
   for (let i=1; i<=kCount; i++) {
     const label = `Iteration ${i}: evaluate f_A()`;
     timeStart(label)
-    log('f_A() result=', document.f_A());
+    log('    f_A() result=', await module.f_A());
     timeEnd(label);
   }
 
+  log("\nEvaluating all code:".toUpperCase())
   document.evaluate_all = true
   for (let i=1; i<=kCount; i++) {
     const label = `Iteration ${i}: evaluate all f_A()`;
     timeStart(label);
-    log('f_A() result=', document.f_A());
+    log('    f_A() result=', await module.f_A());
     timeEnd(label);
   }
 }
@@ -43,6 +49,8 @@ function log(...msg) {
 }
 
 function timeStart(label) {
+  const date = new Date().toISOString();
+  log(`${label} start: ${date}`);
   console.time(label);
   performance.mark(`${label}-start`);
 }
@@ -52,5 +60,5 @@ function timeEnd(label) {
   console.timeEnd(label);
   performance.measure(label, `${label}-start`, `${label}-end`);
   const time = performance.getEntriesByName(label)[0].duration;
-  document.getElementById('log').innerText += `${label}: ${time.toFixed(2)}ms\n`;
+  log(`${label} duration: ${time.toFixed(2)}ms`);
 }

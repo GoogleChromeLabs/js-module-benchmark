@@ -16,16 +16,12 @@ $info
   <script src="../js/helper.js"></script>
   <script src="../js/marker/start.js"></script>
   <script>
-    timeStart('loadModules');
+    timeStart("loadModules");
   </script>
   $scripts
   <script type="module">
-    import {f_A} from './A.mjs'
-    timeEnd('loadModules');
-    log(new Date().toISOString(), "Loaded: A.mjs");
-    document.f_A = f_A;
-    runModuleCode();
+    runModuleBenchmark(import("$module"));
   </script>
-  <script src='../js/marker/end.js'></script>
+  <script src="../js/marker/end.js"></script>
 </body>
 </html>
