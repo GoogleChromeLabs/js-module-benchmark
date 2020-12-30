@@ -250,14 +250,18 @@ class Module(object):
 
 #=============================================================================
 
+
 def step(comment):
   def step_decorator(func):
     @functools.wraps(func)
     def step_wrapper(*args, **kwargs):
       print(comment)
       return func(*args, **kwargs)
+
     return step_wrapper
-  return step_decorator 
+
+  return step_decorator
+
 
 class Benchmark(object):
   def __init__(self, options):
@@ -289,7 +293,8 @@ class Benchmark(object):
   def export(self, out_path):
     out_path.mkdir(parents=True, exist_ok=True)
     self.export_modules(out_path)
-    self.build_bundles(out_path)
+    if not self.options.dynamic_imports:
+      self.build_bundles(out_path)
     self.export_html(out_path)
 
   @step("Exporting modules")
@@ -302,13 +307,11 @@ class Benchmark(object):
 
   @step("Building bundles")
   def build_bundles(self, out_path):
-    if self.options.dynamic_imports:
-      return
     module_path = out_path / "A.mjs"
     bundle_path = out_path / 'bundled.mjs'
     subprocess.check_call(
-      f"npx rollup '{ module_path}' --format=esm --file='{bundle_path}' --name=A",
-      shell=True)
+        f"npx rollup '{ module_path}' --format=esm --file='{bundle_path}' --name=A",
+        shell=True)
     # TODO: support webbundle
 
   @step("Exporting html")
@@ -326,15 +329,14 @@ class Benchmark(object):
 
   @step("Exporting bundled")
   def export_bundled(self, out_path):
-    file_name = f'bundled.html' 
-    path = out_path / file_name
+    path = out_path / 'bundled.html'
     with open(path, 'w') as f:
       f.write(self.benchmark_template().substitute(
           dict(headers="",
                info=self.output_info(),
                scripts="",
                module='./bundled.mjs')))
-    return path 
+    return path
 
   def export_benchmark(self,
                        out_path,
